@@ -1,5 +1,5 @@
 import User from "../models/userModel.js";
-import { ApiError } from "../util/apiError";
+import { ApiError } from "../util/apiError.js";
 import { generateAccessToken, generateRefreshToken } from "../util/token.js";
 
 export const registerUser=async({name,email,password})=>{

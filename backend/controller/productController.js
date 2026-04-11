@@ -1,8 +1,9 @@
-import Product from "../models/productModel";
-import { productSchema } from "../schema/productSchema";
-import { createProductService, deleteProductService, getProductByIdService, updateProductService } from "../services/productSevice";
-import { ApiResponse } from "../util/apiResponse";
-import { asyncHandler } from "../util/asyncHandler";
+import Product from "../models/productModel.js";
+import { productSchema } from "../schema/productSchema.js";
+import { createProductService, deleteProductService, getProductByIdService, updateProductService } from "../services/productSevice.js";
+import { ApiResponse } from "../util/apiResponse.js";
+import { asyncHandler } from "../util/asyncHandler.js";
+import { getPagination, getPaginationMeta } from "../util/pagination.js";
 
 export const createProduct=asyncHandler(async(req,res)=>{
       const images = req.files?.map(file => file.filename);
@@ -49,8 +50,12 @@ export const deleteProduct=asyncHandler(async(req,res)=>{
 
 
 export const getAllProducts=asyncHandler(async(req,res)=>{
-    const products=await Product.find();
-    res.status(200).json(new ApiResponse(200,products,"Products fetched successfully"));
+    const { page, limit, skip } = getPagination(req.query);
+    const products=await Product.find().sort({ createdAt: -1 }).skip(skip).limit(limit);
+    const total=await Product.countDocuments();
+    res.status(200).json(new ApiResponse(200,{products,
+       pagination: getPaginationMeta(page, limit, total)},
+      "Products fetched successfully"));
 });
 
 export const getProductById=asyncHandler(async(req,res)=>{

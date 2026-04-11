@@ -1,4 +1,4 @@
-import Product from "../models/productModel";
+import Product from "../models/productModel.js";
 
 export const createProductService=async(data, image)=>{
 const {title,price,description,category,stock,rating}=data;

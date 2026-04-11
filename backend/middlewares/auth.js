@@ -1,10 +1,10 @@
-import User from "../models/userModel";
-import { asyncHandler } from "../util/asyncHandler";
+import User from "../models/userModel.js";
+import { asyncHandler } from "../util/asyncHandler.js";
 import jwt from "jsonwebtoken";
-import { ApiError } from "../util/apiError";
+import { ApiError } from "../util/apiError.js";
 
-if(!process.env.JWT_SECRET_KEY){
-throw new Error("JWT_SECRET_KEY is not defined in environment variables");
+if(!process.env.Secret_Key){
+throw new Error("Secret_Key is not defined in environment variables");
 }
 
 export const auth=asyncHandler(async(req, _, next)=>{
@@ -14,7 +14,7 @@ if(!token){
 }
 let decoded;
   try {
-   decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+   decoded = jwt.verify(token, process.env.Secret_Key);
   } catch (error) {
     if (error.name === "TokenExpiredError") {
       return next(new ApiError(401, "Access token expired"));

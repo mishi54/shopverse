@@ -4,9 +4,14 @@ import { ApiError } from "../util/apiError.js";
 export const addToCartService = async (userId, productId, quantity) => {
 
     const product = await Product.findById(productId);
+
     if (!product) {
         throw new ApiError(404, "Product not found");
     }
+    if (product.stock < (quantity || 1)) {
+        throw new ApiError(400, "Not enough stock available");
+    }
+
     let cart = await Cart.findOne({ user: userId });
     if (!cart) {
         cart = await Cart.create({
@@ -14,23 +19,34 @@ export const addToCartService = async (userId, productId, quantity) => {
             items: [
                 {
                     product: productId,
-                    quantity: quantity || 1
+                    quantity: quantity || 1,
+                    price: product.price
                 }
             ]
         });
+
         return cart;
     }
+
     const existingItem = cart.items.find(
         item => item.product.toString() === productId
     );
 
     if (existingItem) {
+        if (product.stock < existingItem.quantity + (quantity || 1)) {
+            throw new ApiError(400, "Not enough stock available");
+        }
+
         existingItem.quantity += quantity || 1;
+
     } else {
+
         cart.items.push({
             product: productId,
-            quantity: quantity || 1
+            quantity: quantity || 1,
+            price: product.price 
         });
+
     }
 
     await cart.save();

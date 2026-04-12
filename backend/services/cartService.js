@@ -62,6 +62,15 @@ export const getMyCartService = async (userId) => {
 };
  
 export const updateCartItemService = async (userId, productId, quantity) => {
+  
+    const product = await Product.findById(productId);
+    if (!product) {
+        throw new ApiError(404, "Product not found");
+    }
+
+    if (product.stock < quantity) {
+  throw new ApiError(400, "Not enough stock");
+}
     const cart = await Cart.findOne({ user: userId });
     if (!cart) {
         throw new ApiError(404, "Cart not found");

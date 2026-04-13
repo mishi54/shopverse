@@ -8,63 +8,69 @@ export const placeOrderService = async (
   shippingAddress,
   paymentMethod
 ) => {
-const session = await mongoose.startSession();
+
+  const session = await mongoose.startSession();
 
   try {
     session.startTransaction();
-  const cart = await Cart.findOne({ user: userId }).populate("items.product");
 
-  if (!cart || cart.items.length === 0) {
-    throw new ApiError(400, "Cart is empty");
-  }
+    const cart = await Cart.findOne({ user: userId })
+      .populate("items.product")
+      .session(session);
 
-  for (const item of cart.items) {
-    if (item.product.stock < item.quantity) {
-      throw new ApiError(
-        400,
-        `${item.product.title} out of stock`
-      );
+    if (!cart || cart.items.length === 0) {
+      throw new ApiError(400, "Cart is empty");
     }
-  }
-const itemsPrice = cart.items.reduce(
-  (acc, item) => acc + item.product.price * item.quantity,
-  0
-);
-  const taxPrice = 0;
-  const shippingPrice = 0;
-
-  const totalPrice = itemsPrice + taxPrice + shippingPrice;
-
-  const orderItems = cart.items.map((item) => ({
-    product: item.product._id,
-    title: item.product.title,
-    price: item.price,
-    quantity: item.quantity,
-    images: item.product.images,
-  }));
-
-  const order = await Order.create({
-    user: userId,
-    items: orderItems,
-    itemsPrice,
-    taxPrice,
-    shippingPrice,
-    totalPrice,
-    paymentMethod,
-    shippingAddress,
-  });
 for (const item of cart.items) {
-  await Product.updateOne(
-    { _id: item.product._id },
-    { $inc: { stock: -item.quantity } }
+  const result = await Product.updateOne(
+    {
+      _id: item.product._id,
+      stock: { $gte: item.quantity }
+    },
+    {
+      $inc: { stock: -item.quantity }
+    },
+    { session }
   );
-}
-  cart.items = [];
-  await cart.save();
 
+  if (result.modifiedCount === 0) {
+    throw new ApiError(400, `${item.product.title} out of stock`);
+  }
+}
+    const itemsPrice = cart.items.reduce(
+      (acc, item) => acc + item.product.price * item.quantity,
+      0
+    );
+
+    const totalPrice = itemsPrice;
+
+    const orderItems = cart.items.map((item) => ({
+      product: item.product._id,
+      title: item.product.title,
+      price: item.product.price,
+      quantity: item.quantity,
+      images: item.product.images,
+    }));
+    const order = await Order.create(
+      [{
+        user: userId,
+        items: orderItems,
+        itemsPrice,
+        totalPrice,
+        paymentMethod,
+        shippingAddress,
+      }],
+      { session }
+    );
+await Cart.updateOne(
+  { user: userId },
+  { $set: { items: [] } },
+  { session }
+);
 
     await session.commitTransaction();
     session.endSession();
+
     return order[0];
 
   } catch (error) {
@@ -144,38 +150,54 @@ export const updateOrderStatusService = async (orderId, status) => {
   return order;
 };
 
-
-
 export const cancelOrderService = async (userId, orderId) => {
 
-  const order = await Order.findById(orderId);
+  const session = await mongoose.startSession();
 
-  if (!order) {
-    throw new ApiError(404, "Order not found");
-  }
-  if (order.user.toString() !== userId) {
-    throw new ApiError(403, "Not allowed to cancel this order");
-  }
-  if (order.orderStatus === "delivered") {
-    throw new ApiError(400, "Cannot cancel delivered order");
-  }
-  if (order.orderStatus === "shipped") {
-    throw new ApiError(400, "Cannot cancel shipped order");
-  }
-for (const item of order.items) {
-    await Product.updateOne(
-      { _id: item.product },
-      { $inc: { stock: item.quantity } }
-    );
-  }
-  order.orderStatus = "cancelled";
-  order.cancelledAt = new Date();
+  try {
+    session.startTransaction();
 
-  await order.save();
+    const order = await Order.findById(orderId).session(session);
 
+    if (!order) {
+      throw new ApiError(404, "Order not found");
+    }
+
+    if (order.user.toString() !== userId) {
+      throw new ApiError(403, "Not allowed to cancel this order");
+    }
+
+    if (order.orderStatus === "delivered") {
+      throw new ApiError(400, "Cannot cancel delivered order");
+    }
+
+    if (order.orderStatus === "shipped") {
+      throw new ApiError(400, "Cannot cancel shipped order");
+    }
+  for (const item of order.items) {
+await Product.updateOne(
+  { _id: item.product },
+  { $inc: { stock: item.quantity } },
+  { session }
+);
+  }
+
+    order.orderStatus = "cancelled";
+    order.cancelledAt = new Date();
+
+    await order.save({ session });
+
+      await session.commitTransaction();
+        session.endSession();
   return order;
-};
 
+} catch (err) {
+  await session.abortTransaction();
+    session.endSession();
+  throw err;
+
+} 
+};
 
 export const markAsPaidService = async (orderId, transactionId) => {
 

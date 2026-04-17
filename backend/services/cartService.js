@@ -100,34 +100,32 @@ export const clearCartService = async (userId) => {
     return cart;
 };
 
+export const removeCartItemService = async (userId, productId, removeQty) => {
 
-export const removeCartItemService = (async (userId, productId) => {
+const cart = await Cart.findOne({ user: userId });
 
+if (!cart) {
+    throw new ApiError(404, "Cart not found");
+}
 
-    const cart = await Cart.findOne({ user: userId });
+const item = cart.items.find(
+    (p) => p.product.toString() === productId
+);
 
-    if (!cart) {
-        throw new ApiError(404, "Cart not found");
-    }
+if (!item) {
+    throw new ApiError(404, "Item not found in cart");
+}
 
-    const item = cart.items.find(
-        (p) => p.product.toString() === productId
+if (item.quantity > removeQty) {
+    item.quantity -= removeQty;
+} else {
+    cart.items = cart.items.filter(
+        (p) => p.product.toString() !== productId
     );
+}
 
-    if (!item) {
-        throw new ApiError(404, "Item not found in cart");
-    }
+await cart.save();
 
-    // decrease logic
-    if (item.quantity > 1) {
-        item.quantity -= 1;
-    } else {
-        cart.items = cart.items.filter(
-            (p) => p.product.toString() !== productId
-        );
-    }
+return cart;
 
-    await cart.save();
-
-    return cart;
-});
+};

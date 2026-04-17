@@ -5,7 +5,7 @@ import uploadFile from "../util/uploadFiles.js";
 
 const router=express.Router();
 
-router.post("/", auth,adminOnly, uploadFile.array("images", 5), createProduct);
+router.post("/create", auth,adminOnly, uploadFile.array("images", 5), createProduct);
 router.patch("/:id", auth, adminOnly, uploadFile.array("images", 5), updateProduct);
 router.delete("/:id", auth,adminOnly, deleteProduct);
 router.get("/", getAllProducts);

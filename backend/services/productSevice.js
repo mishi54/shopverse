@@ -1,7 +1,7 @@
 import Product from "../models/productModel.js";
 
-export const createProductService=async(data, image)=>{
-const {title,price,description,category,stock,rating}=data;
+export const createProductService=async(data)=>{
+const {title,price,description,category,stock,images,rating}=data;
 const newProduct=await Product.create({
     title,
     price,
@@ -9,7 +9,7 @@ const newProduct=await Product.create({
     category,
     stock,
     rating,
-    images:image
+    images
 });
 return newProduct;
 
@@ -20,7 +20,7 @@ export const updateProductService = async (id, data) => {
 const updatedProduct = await Product.findByIdAndUpdate(
   id,
   { $set: data },
-  { new: true, runValidators: true }
+{ returnDocument: "after", runValidators: true }
 );
 
 return updatedProduct;

@@ -4,14 +4,15 @@ import { createProductService, deleteProductService, getProductByIdService, upda
 import { ApiResponse } from "../util/apiResponse.js";
 import { asyncHandler } from "../util/asyncHandler.js";
 import { getPagination, getPaginationMeta } from "../util/pagination.js";
-
+import validator from "../util/validator.js";
+import { ApiError } from "../util/apiError.js";
 export const createProduct=asyncHandler(async(req,res)=>{
       const images = req.files?.map(file => file.filename);
 
 if (!images || images.length === 0) {
   return res.status(400).json({ error: '"images" are required' });
 }
-const error =await validator(productSchema,req.body);
+const error =await validator(productSchema,{ ...req.body, images });
 if(error){
     throw new ApiError(400,error);
 }

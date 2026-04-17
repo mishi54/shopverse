@@ -1,15 +1,18 @@
 import User from "../models/userModel.js";
 import { ApiError } from "../util/apiError.js";
 import { generateAccessToken, generateRefreshToken } from "../util/token.js";
-
-export const registerUser=async({name,email,password})=>{
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+dotenv.config();
+export const registerUser=async({name,email,password,image,role})=>{
 
 const existing =await User.findOne({email});
 if(existing){
     throw new ApiError(400,"User already exists");
 }
 const hashedPassword=bcrypt.hashSync(password,bcrypt.genSaltSync(10));
-const user=await User.create({name,email,password:hashedPassword});
+const user=await User.create({name,email,password:hashedPassword,image,role});
 const safeUser=await User.findById(user._id).select("-password");
 return safeUser;
 

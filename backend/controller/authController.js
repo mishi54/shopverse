@@ -6,12 +6,12 @@ import { loginSchema, registerSchema } from "../schema/userSchema.js";
 import { ApiError } from "../util/apiError.js";
 import { refreshAccessToken, logoutUser } from "../services/authService.js";
 export const register=asyncHandler(async(req,res)=>{
-
-   const error=await validator(registerSchema,req.body);
+const image=req.file ? req.file.filename : null;
+const error=await validator(registerSchema,req.body);
    if(error){
     throw new ApiError(400,error);
    }
-   const result=await registerUser(req.body);
+const result=await registerUser(req.body,image);
    res.status(200).json(new ApiResponse(200,result,"User registered successfully"));
 
 });

@@ -1,6 +1,7 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import randomNumber from "./randomNumber.js";
 
  const uploadDir="storage/uploads";
 
@@ -10,16 +11,19 @@ if(!fs.existsSync(uploadDir)){
 const fileFilter= (req, file, cb) => {
   cb(null, true)
 }
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, uploadDir)
+    cb(null, uploadDir);
   },
-  filename(req, file, cb) {
-
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(file.originalname)}`;
-    cb(null, uniqueSuffix)
-  }
-})
+  filename: function (req, file, cb) {
+    const uniqueName = `${Date.now()}_${randomNumber(
+      100000,
+      999999
+    )}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  },
+});
 
 const uploadFile = multer({ storage: storage,
     fileFilter,

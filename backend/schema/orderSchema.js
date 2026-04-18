@@ -2,7 +2,7 @@ import Joi from "joi";
 
 export const orderSchema = Joi.object({
   paymentMethod: Joi.string()
-    .valid("COD", "Stripe", "JazzCash", "EasyPaisa")
+    .valid("COD", "Stripe")
     .default("COD"),
 
   shippingAddress: Joi.object({

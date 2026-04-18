@@ -4,8 +4,8 @@ import { ApiResponse } from "../util/apiResponse.js";
 import { ApiError } from "../util/apiError.js";
 import validator from "../util/validator.js";
 import { orderSchema } from "../schema/orderSchema.js";
-import { markAsPaidService } from "../services/orderService.js";
-export const placeOrder = asyncHandler(async (req, res) => {
+// import { markAsPaidService } from "../services/orderService.js";
+export const createCheckoutSession = asyncHandler(async (req, res) => {
   const userId = req.user.id;
     const error=await validator(orderSchema,req.body);
     if(error){
@@ -13,7 +13,7 @@ export const placeOrder = asyncHandler(async (req, res) => {
     }
   const { shippingAddress, paymentMethod } = req.body;
 
-  const order = await placeOrderService(
+  const order = await createCheckoutSessionService(
     userId,
     shippingAddress,
     paymentMethod
@@ -80,14 +80,14 @@ export const cancelOrder = asyncHandler(async (req, res) => {
 });
 
 
-export const markAsPaid = asyncHandler(async (req, res) => {
+// export const markAsPaid = asyncHandler(async (req, res) => {
 
-  const { orderId } = req.params;
-  const { transactionId } = req.body;
+//   const { orderId } = req.params;
+//   const { transactionId } = req.body;
 
-  const order = await markAsPaidService(orderId, transactionId);
+//   const order = await markAsPaidService(orderId, transactionId);
 
-  res.status(200).json(
-    new ApiResponse(200, order, "Order marked as paid")
-  );
-});
+//   res.status(200).json(
+//     new ApiResponse(200, order, "Order marked as paid")
+//   );
+// });

@@ -60,7 +60,7 @@ const orderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["COD", "Stripe", "JazzCash", "EasyPaisa"],
+      enum: ["COD", "Stripe"],
       default: "COD",
     },
 
@@ -73,7 +73,12 @@ const orderSchema = new mongoose.Schema(
     transactionId: {
       type: String,
     },
-
+    stripeSessionId: {
+      type: String,
+    },
+   stripePaymentIntentId: {
+    type: String,
+   },
     paidAt: {
       type: Date,
     },
@@ -117,6 +122,7 @@ const orderSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
   },
   { timestamps: true }
 );

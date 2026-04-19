@@ -3,8 +3,9 @@ import Order from "../models/orderModel.js";
 import Product from "../models/productModel.js";
 import { ApiError } from "../util/apiError.js";
 import mongoose from "mongoose";
-import { deductStock } from "./deductStock.js";
-import { restoreStock } from "./restoreStock.js";
+import { releaseStock, reserveStock } from "../services/stockService.js";
+import { createStripeSession } from "./stripe.service.js";
+
 export const createCheckoutSessionService = async (
   userId,
   shippingAddress,
@@ -12,9 +13,10 @@ export const createCheckoutSessionService = async (
 ) => {
 
   const session = await mongoose.startSession();
-  session.startTransaction();
 
   try {
+
+    session.startTransaction();
 
     const cart = await Cart.findOne({ user: userId })
       .populate("items.product")
@@ -38,63 +40,63 @@ export const createCheckoutSessionService = async (
       images: item.product.images
     }));
 
-    let order;
-    if (paymentMethod === "COD") {
+    const expiresAt =
+      new Date(Date.now() + 15 * 60 * 1000);
+    await reserveStock(cart.items, session);
 
-      await deductStock(cart.items, session);
+    const order = await Order.create([{
+      user: userId,
+      items: orderItems,
+      itemsPrice,
+      totalPrice: itemsPrice,
+      paymentMethod,
+      paymentStatus: "pending",
+      stockStatus: "reserved",
+      expiresAt,
+      shippingAddress
+    }], { session });
 
-      order = await Order.create([{
-        user: userId,
-        items: orderItems,
-        itemsPrice,
-        totalPrice: itemsPrice,
-        paymentMethod,
-        paymentStatus: "paid",
-        shippingAddress
-      }], { session });
+    cart.items = [];
+    await cart.save({ session });
+    if (paymentMethod === "Stripe") {
 
-    }
-    else {
+      const stripeSession =
+        await createStripeSession(order[0]);
 
-      order = await Order.create([{
-        user: userId,
-        items: orderItems,
-        itemsPrice,
-        totalPrice: itemsPrice,
-        paymentMethod,
-        paymentStatus: "pending",
-        shippingAddress
-      }], { session });
+      order[0].stripeSessionId =
+        stripeSession.id;
 
-      const stripeSession = await createStripeSession(order[0]);
-
-      order[0].stripeSessionId = stripeSession.id;
       await order[0].save({ session });
 
       await session.commitTransaction();
-      session.endSession();
 
       return {
         checkoutUrl: stripeSession.url
       };
+
     }
-    cart.items = [];
-    await cart.save({ session });
+    order[0].paymentStatus = "paid";
+    order[0].stockStatus = "confirmed";
+
+    await order[0].save({ session });
 
     await session.commitTransaction();
-    session.endSession();
 
     return {
-      message: "Order placed successfully",
       order: order[0]
     };
 
   } catch (err) {
 
     await session.abortTransaction();
-    session.endSession();
     throw err;
+
+  } finally {
+
+    session.endSession();
+
   }
+
 };
 export const getMyOrdersService = async (userId) => {
   
@@ -190,16 +192,8 @@ export const cancelOrderService = async (userId, orderId) => {
     if (order.orderStatus === "shipped") {
       throw new ApiError(400, "Cannot cancel shipped order");
     }
-  for (const item of order.items) {
-      await restoreStock(order.items, session);
 
-// await Product.updateOne(
-//   { _id: item.product },
-//   { $inc: { stock: item.quantity } },
-//   { session }
-// );
-  }
-
+     await releaseStock(order.items, session);
     order.orderStatus = "cancelled";
     order.cancelledAt = new Date();
 

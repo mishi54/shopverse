@@ -8,6 +8,7 @@ import cartRoutes from './route/cart.js';
 import orderRoutes from './route/order.js';
 import webhookRoute from './route/webhook.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import './script/releaseOrder.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use('/webhook', webhookRoute);

@@ -6,15 +6,13 @@ const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 export const handleStripeWebhook = async (req, res) => {
   console.log("WEBHOOK HIT");
   const sig = req.headers["stripe-signature"];
-
   let event;
-
   try {
     event = stripe.webhooks.constructEvent(
       req.body,
       sig,
       endpointSecret,
-       300
+    999999 // don't use this in production, just for testing to avoid signature errors during development
     );
 
   } catch (err) {

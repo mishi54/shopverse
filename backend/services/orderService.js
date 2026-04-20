@@ -42,8 +42,28 @@ console.log("cart", cart);
 
     const expiresAt =
       new Date(Date.now() + 15 * 60 * 1000);
-    await reserveStock(cart.items, session);
+   
+const existingOrder = await Order.findOne({
+  user: userId,
+  paymentStatus: "pending",
+  paymentMethod: "Stripe",
+  expiresAt: { $gt: new Date() }
+}).session(session);
 
+if (existingOrder && existingOrder.stripeSessionId) {
+
+  const stripeSession =
+    await stripe.checkout.sessions.retrieve(
+      existingOrder.stripeSessionId
+    );
+
+  await session.abortTransaction();
+
+  return {
+    checkoutUrl: stripeSession.url
+  };
+}
+ await reserveStock(cart.items, session);
     const order = await Order.create([{
       user: userId,
       items: orderItems,

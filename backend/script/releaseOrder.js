@@ -6,16 +6,16 @@ async () => {
 
   const expiredOrders =
     await Order.find({
-      stockStatus: "reserved",
-      expiresAt: { $lt: new Date() }
+     paymentStatus: "pending",
+    paymentMethod: "Stripe",
+    createdAt: { $lt: new Date(Date.now() - 15 * 60 * 1000) }
     });
 
   for (const order of expiredOrders) {
 
     await releaseStock(order.items);
-
-    order.stockStatus = "released";
     order.paymentStatus = "failed";
+    order.orderStatus = "cancelled";
 
     await order.save();
 

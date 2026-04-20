@@ -25,11 +25,6 @@ export const handlePaymentSuccess = async (sessionData) => {
 
   try {
     session.startTransaction();
-
-    // const order = await Order.findOne({
-    //   stripeSessionId: sessionData.id,
-   
-    // }).session(session);
         const order = await Order.findById(
   sessionData?.metadata?.orderId
     ).session(session);
@@ -55,7 +50,7 @@ if (order.stripePaymentIntentId === sessionData.payment_intent) {
     order.stockStatus = "confirmed";
 
     order.stripePaymentIntentId = sessionData.payment_intent;
-
+   order.orderStatus = "processing";
     await order.save({ session });
 
     await session.commitTransaction();

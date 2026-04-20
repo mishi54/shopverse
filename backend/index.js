@@ -11,7 +11,7 @@ import { errorHandler } from './middlewares/errorHandler.js';
 import './script/releaseOrder.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
-app.use('/webhook', webhookRoute);
+app.use('/api/webhook', webhookRoute);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/storage/uploads', express.static('uploads'));

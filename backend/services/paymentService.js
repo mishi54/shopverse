@@ -13,7 +13,7 @@ export const createStripeSession = async (order) => {
         currency: "usd",
         product_data: {
           name: item.title,
-          images: item.images
+          // images: item.images
         },
         unit_amount: item.price * 100
       },

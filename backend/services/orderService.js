@@ -4,14 +4,14 @@ import Product from "../models/productModel.js";
 import { ApiError } from "../util/apiError.js";
 import mongoose from "mongoose";
 import { releaseStock, reserveStock } from "../services/stockService.js";
-import { createStripeSession } from "./stripe.service.js";
+import { createStripeSession } from "../services/paymentService.js";
 
 export const createCheckoutSessionService = async (
   userId,
   shippingAddress,
   paymentMethod
 ) => {
-
+console.log("userId", userId);
   const session = await mongoose.startSession();
 
   try {
@@ -21,7 +21,7 @@ export const createCheckoutSessionService = async (
     const cart = await Cart.findOne({ user: userId })
       .populate("items.product")
       .session(session);
-
+console.log("cart", cart);
     if (!cart || cart.items.length === 0) {
       throw new ApiError(400, "Cart is empty");
     }

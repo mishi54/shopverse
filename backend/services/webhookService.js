@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Order from "../models/orderModel.js";
 export const processStripeEvent = async (event) => {
+  console.log("Processing Stripe event:", event.type);
   switch (event.type) {
     case "checkout.session.completed":
       await handlePaymentSuccess(event.data.object);
@@ -25,9 +26,13 @@ export const handlePaymentSuccess = async (sessionData) => {
   try {
     session.startTransaction();
 
-    const order = await Order.findOne({
-      stripeSessionId: sessionData.id,
-    }).session(session);
+    // const order = await Order.findOne({
+    //   stripeSessionId: sessionData.id,
+   
+    // }).session(session);
+        const order = await Order.findById(
+  sessionData?.metadata?.orderId
+    ).session(session);
 
 if (!order) {
   await session.abortTransaction();

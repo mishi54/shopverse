@@ -1,4 +1,4 @@
-import { cancelOrderService, getAllOrdersService, getMyOrdersService, getOrderByIdService, placeOrderService, updateOrderStatusService } from "../services/orderService.js";
+import { cancelOrderService, createCheckoutSessionService, getAllOrdersService, getMyOrdersService, getOrderByIdService, updateOrderStatusService } from "../services/orderService.js";
 import {asyncHandler} from "../util/asyncHandler.js";
 import { ApiResponse } from "../util/apiResponse.js";
 import { ApiError } from "../util/apiError.js";
@@ -6,7 +6,7 @@ import validator from "../util/validator.js";
 import { orderSchema } from "../schema/orderSchema.js";
 // import { markAsPaidService } from "../services/orderService.js";
 export const createCheckoutSession = asyncHandler(async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user._id;
     const error=await validator(orderSchema,req.body);
     if(error){
         throw new ApiError(400,error);
